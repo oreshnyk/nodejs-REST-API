@@ -3,7 +3,8 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models/user");
 const { httpError, ctrlWrapper } = require("../utils");
 // const { SECRET_KEY } = process.env;
-const SECRET_KEY = "secret";
+
+const SECRET_KEY = "parolb";
 
 const register = async (req, res, next) => {
   const { email, password } = req.body;
@@ -14,7 +15,9 @@ const register = async (req, res, next) => {
   }
 
   const hashedPassword = await bcryptjs.hash(password, 10);
+
   const newUser = await User.create({ ...req.body, password: hashedPassword });
+
 
   res.status(201).json({
     password: newUser.password,
