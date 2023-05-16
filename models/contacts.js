@@ -40,34 +40,20 @@ const updateContact = async (contactId, body) => {
   const contacts = await listContacts();
   const { name, email, phone } = body;
   const idx = contacts.findIndex((contact) => contact.id === contactId);
-  if (body.name) {
-    return (contacts[idx] = {
-      id: contactId,
-      name: name,
-      email: contacts[idx].email,
-      phone: contacts[idx].phone,
-    });
-  }
 
-  if (body.email) {
-    return (contacts[idx] = {
+  if (name || email || phone) {
+    const updatedContact = {
       id: contactId,
-      name: contacts[idx].name,
-      email: email,
-      phone: contacts[idx].phone,
-    });
-  }
+      name: name ? name : contacts[idx].name,
+      email: email ? email : contacts[idx].email,
+      phone: phone ? phone : contacts[idx].phone,
+    };
 
-  if (body.phone) {
-    return (contacts[idx] = {
-      id: contactId,
-      name: contacts[idx].name,
-      email: contacts[idx].email,
-      phone: phone,
-    });
+    contacts[idx] = updatedContact;
+    await fs.writeFile(contactsPath, JSON.stringify(contacts), "utf-8");
+    return updatedContact;
   }
-  await fs.writeFile(contactsPath, JSON.stringify(contacts), "utf-8");
-  return contacts[idx] || null;
+  return null;
 };
 
 module.exports = {
