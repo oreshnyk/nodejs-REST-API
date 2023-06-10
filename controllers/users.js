@@ -9,16 +9,20 @@ const register = async (req, res, next) => {
 
   const user = await User.findOne({ email });
   if (user) {
-    throw httpError(409, "Email in use");
+    // throw httpError(409, "Email in use");
+    res.status(409).json({
+      message: "Email in use"
+    })
   }
 
   const hashedPassword = await bcryptjs.hash(password, 10);
   const newUser = await User.create({ ...req.body, password: hashedPassword });
 
   res.status(201).json({
-    password: newUser.password,
-    email: newUser.email,
-    subsription: newUser.subscription,
+    user: {
+      email: newUser.email,
+      subsription: newUser.subscription
+    }
   });
 };
 
@@ -27,12 +31,18 @@ const login = async (req, res, next) => {
 
   const user = await User.findOne({ email });
   if (!user) {
-    throw httpError(401, "Email or password is wrong");
+    // throw httpError(401, "Email or password is wrong");
+    res.status(401).json({
+      message: "Email or password is wrong"
+    })
   }
 
   const comparePassword = await bcryptjs.compare(password, user.password);
   if (!comparePassword) {
-    throw httpError(401, "Email or password is wrong");
+    // throw httpError(401, "Email or password is wrong");
+    res.status(401).json({
+      message: "Email or password is wrong"
+    })
   }
 
   const payload = {
@@ -40,15 +50,22 @@ const login = async (req, res, next) => {
   };
   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
   await User.findByIdAndUpdate(user._id, { token });
-  res.status(201).json({ token });
+  res.status(201).json({
+    token,
+    user: {
+      email: user.email,
+      subsription: user.subscription
+    }
+  });
 };
 
 const getCurrentUser = async (req, res, next) => {
-  const { email, password } = req.user;
+  const { email, subscription } = req.user;
+  const user = await User.findOne({ email });
 
   res.status(200).json({
-    email,
-    password,
+    email: user.email,
+    subsription: user.subscription,
   });
 };
 
@@ -56,7 +73,9 @@ const logout = async (req, res, next) => {
   const { _id } = req.user;
   await User.findByIdAndUpdate(_id, { token: "" });
 
-  res.json({ message: "Logout success" });
+  // res.status(204);
+  // res.json({ message: "Logout success" });
+  res.status(204).json();
 };
 
 module.exports = {
