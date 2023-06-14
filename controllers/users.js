@@ -15,6 +15,21 @@ const register = async (req, res, next) => {
     })
   }
 
+//   try {
+//     const hashedPassword = await bcryptjs.hash(password, 10);
+//     const newUser = await User.create({ ...req.body, password: hashedPassword });
+
+//     res.status(201).json({
+//       user: {
+//         email: newUser.email,
+//         subsription: newUser.subscription
+//       }
+//     });
+//   } catch (error) {
+//     next(error); // Pass the error to the error handling middleware
+//   }
+// };
+
   const hashedPassword = await bcryptjs.hash(password, 10);
 
   const newUser = await User.create({ ...req.body, password: hashedPassword });
@@ -39,6 +54,32 @@ const login = async (req, res, next) => {
     })
   }
 
+
+//   try {
+//     const comparePassword = await bcryptjs.compare(password, user.password);
+//     if (!comparePassword) {
+//       return res.status(401).json({
+//         message: "Email or password is wrong"
+//       });
+//     }
+
+//     const payload = {
+//       id: user._id,
+//     };
+//     const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
+//     await User.findByIdAndUpdate(user._id, { token });
+//     res.status(201).json({
+//       token,
+//       user: {
+//         email: user.email,
+//         subsription: user.subscription
+//       }
+//     });
+//   } catch (error) {
+//     next(error); // Pass the error to the error handling middleware
+//   }
+// };
+////////////////////////////////////////////////////////////////
   const comparePassword = await bcryptjs.compare(password, user.password);
   if (!comparePassword) {
     // throw httpError(401, "Email or password is wrong");

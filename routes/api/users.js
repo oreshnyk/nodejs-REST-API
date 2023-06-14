@@ -1,6 +1,6 @@
 const express = require("express");
 const { schemas } = require("../../models/user");
-const { validateBody, authenticate, upload } = require("../../middlewars");
+const { validateBody, authenticate } = require("../../middlewars");
 const ctrl = require("../../controllers/users");
 const router = express.Router();
 

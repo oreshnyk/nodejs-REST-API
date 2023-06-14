@@ -18,7 +18,14 @@ const userSchema = new Schema(
       enum: ["starter", "pro", "business"],
       default: "starter",
     },
-    token: String,
+    token: {
+      type: String,
+      default: null,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+    },
     avatarURL: String,
   },
   { versionKey: false, timestamps: true }
