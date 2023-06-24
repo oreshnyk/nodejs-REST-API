@@ -93,7 +93,7 @@ const updateAvatar = async (req, res, next) => {
     const image = await jimp.read(fileData.secure_url);
     image.resize(250, 250).quality(80);
 
-    const processedAvatarPath = `tmp/${_id}_avatar.jpg`;
+    const processedAvatarPath = `temp/${_id}_avatar.jpg`;
     await image.writeAsync(processedAvatarPath);
 
     const uniqueFilename = `${_id}_${Date.now()}${mimetype.replace("image/", ".")}`;
