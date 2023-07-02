@@ -7,18 +7,14 @@ const jimp = require("jimp");
 const { User } = require("../models/user");
 const { httpError, ctrlWrapper, cloudinary } = require("../utils");
 const { SECRET_KEY } = process.env;
+const { sendVerificationEmail } = require("../utils/sendEmail");
+const { nanoid } = require('nanoid');
 
 const register = async (req, res, next) => {
   const { email, password } = req.body;
-  // const { path: oldPath } = req.file;
-  // const fileData = await cloudinary.uploader.upload(oldPath, {
-  //   folder: "avatars"
-  // })
-  // await fs.unlink(oldPath);
 
   const user = await User.findOne({ email });
   if (user) {
-    // throw httpError(409, "Email in use");
     res.status(409).json({
       message: "Email in use"
     })
@@ -28,18 +24,76 @@ const register = async (req, res, next) => {
   // шаг 3
   const avatarUrl = gravatar.url(email, { s: '200', r: 'pg', d: 'identicon' });
   const normalizedAvatarUrl = avatarUrl.replace(/^\/\//, 'https://');
-  // const avatarUrl = fileData.url;
+  const verificationToken = nanoid();
 
-  const newUser = await User.create({ ...req.body, password: hashedPassword, avatarURL: normalizedAvatarUrl });
+  const newUser = await User.create({ ...req.body, password: hashedPassword, avatarURL: normalizedAvatarUrl, verificationToken });
+
+  try {
+    await sendVerificationEmail(email, verificationToken);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to send verification email' });
+    return;
+  }
 
 
   res.status(201).json({
     user: {
       email: newUser.email,
-      subsription: newUser.subscription,
+      subscription: newUser.subscription,
       avatarURL: normalizedAvatarUrl
     }
   });
+};
+
+const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+
+  try {
+    const user = await User.findOne({ verificationToken });
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    await User.findByIdAndUpdate(user._id, { verify: true, verificationToken: '' });
+
+    res.status(200).json({ message: 'Verification successful' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const resendVerificationEmail = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    const error = httpError(400, 'Email not found');
+    return res.status(error.status).json({ message: error.message });
+  }
+
+  if (user.verify) {
+    const error = httpError(400, 'Verification has already been passed');
+    return res.status(error.status).json({ message: error.message });
+  }
+
+  let verificationToken = user.verificationToken;
+
+  if (!verificationToken) {
+    verificationToken = nanoid();
+    user.verificationToken = verificationToken;
+    await user.save();
+  }
+
+  try {
+    await sendVerificationEmail(email, verificationToken);
+    res.status(200).json({ message: 'Verification email sent' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to send verification email' });
+  }
 };
 
 const login = async (req, res, next) => {
@@ -70,7 +124,7 @@ const login = async (req, res, next) => {
     token,
     user: {
       email: user.email,
-      subsription: user.subscription
+      subscription: user.subscription
     }
   });
 };
@@ -120,7 +174,7 @@ const getCurrentUser = async (req, res, next) => {
 
   res.status(200).json({
     email: user.email,
-    subsription: user.subscription,
+    subscription: user.subscription,
   });
 };
 
@@ -135,6 +189,8 @@ const logout = async (req, res, next) => {
 
 module.exports = {
   register: ctrlWrapper(register),
+  verifyEmail: ctrlWrapper(verifyEmail),
+  resendVerificationEmail: ctrlWrapper(resendVerificationEmail),
   login: ctrlWrapper(login),
   updateAvatar: ctrlWrapper(updateAvatar),
   getCurrentUser: ctrlWrapper(getCurrentUser),
