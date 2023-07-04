@@ -9,7 +9,7 @@ const errorMessageList = {
 const httpError = (status, message = errorMessageList[status]) => {
   const error = new Error();
   error.status = status;
-  error.message = message;
+  error.message = message || errorMessageList[status] || 'Server Error';
   return error;
 };
 
